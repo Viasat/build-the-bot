@@ -1,0 +1,111 @@
+name: Release to PyPI
+
+on:
+  push:
+    branches:
+      - main
+      
+jobs:
+  check-commit-message:
+    runs-on: ubuntu-latest
+    outputs:
+      should_release: ${{ steps.check.outputs.should_release }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check commit message
+        id: check
+        run: |
+          commit_message="${{ github.event.head_commit.message }}"
+          substring="[skip release]"
+          if [[ "$commit_message" == *"$substring"* ]]; then
+            echo "Skipping release as the commit message contains '$substring'."
+            echo "should_release=false" >> $GITHUB_ENV
+          else
+            echo "should_release=true" >> $GITHUB_ENV
+          fi
+
+
+  build-and-deploy-to-pypi:
+    needs: check-commit-message
+    if: needs.check-commit-message.outputs.should_release == 'true'
+    permissions:
+        contents: write
+        id-token: write
+    runs-on: ubuntu-latest
+
+    steps:
+      # Check out the code
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Set up Node.js for semantic-release
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # Install dependencies for semantic-release
+      - name: Install semantic-release
+        run: npm install semantic-release @semantic-release/changelog @semantic-release/git
+
+      # Dry run semantic-release to check specifics of the upcoming version
+      - name: Run semantic-release (dry-run)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          npx semantic-release --dry-run
+          if [[ -f "./next-version" ]]; then
+            NEXT_VERSION=$(cat "./next-version" | tr -d '\n\r')
+          else
+            commitCount=$(cat "./commit-count" | tr -d '\n\r')
+            if [[ $commitCount -eq 0 ]]; then
+              NEXT_VERSION=$(cat "./current-version" | tr -d '\n\r')
+              echo "No commits since last release, reusing current-version ${NEXT_VERSION}"
+          else
+            echo "Could not generate the next semantic version number. There are commits, but none are properly tagged (e.g. Fix:) since last release." >&2
+            exit 1
+            fi
+          fi
+          echo "NEXT_VERSION=${NEXT_VERSION}" >> $GITHUB_ENV
+          
+      - name: Update version in pyproject.toml
+        run: |
+          if [[ -f "next-version" ]]; then
+            NEXT_VERSION=$(cat "./next-version" | tr -d '\n\r')
+            sed -i "/version =/c\version = \"${NEXT_VERSION}\"" pyproject.toml
+          else
+            echo "next-version file not found. Skipping version update in pyproject.toml." >&2
+          fi
+          
+      - name: Run semantic-release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          npx semantic-release
+          
+      # Set up Python environment for building packages
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9.18'
+          architecture: 'x64'
+
+      # Upgrade pip and install build dependencies
+      - name: Install build dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y build-essential
+          python -m pip install --upgrade pip build
+
+      # Build the Python package
+      - name: Build package
+        run: python -m build
+          
+      # Upload the package to PyPI
+      - name: Upload to PyPI
+        run: |
+          python -m pip install twine
+          twine upload -u __token__ -p "${{ secrets.PYPI_TOKEN }}" dist/* --verbose

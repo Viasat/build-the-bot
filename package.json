@@ -1,0 +1,49 @@
+{
+    "release": {
+        "branches": ["main"],
+        "plugins": [
+            [
+                "@semantic-release/commit-analyzer",
+                {
+                    "preset": "eslint",
+                    "releaseRules": [
+                        {
+                            "tag": "Docs",
+                            "release": "patch"
+                        },
+                        {
+                            "tag": "Build",
+                            "release": "patch"
+                        },
+                        {
+                            "tag": "Upgrade",
+                            "release": "patch"
+                        },
+                        {
+                            "tag": "Chore",
+                            "release": "patch"
+                        }
+                    ]
+                }
+            ],
+            [
+                "@semantic-release/release-notes-generator",
+                {
+                    "preset": "eslint"
+                }
+            ],
+            [
+                "@semantic-release/exec",
+                {
+                    "analyzeCommitsCmd": "echo \"${lastRelease.version}\" > current-version; echo \"${commits.length}\" > commit-count",
+                    "verifyReleaseCmd": "echo \"${nextRelease.version}\" > next-version"
+                }
+            ]
+        ]
+    },
+    "dependencies": {
+        "@semantic-release/exec": "^6.0.3",
+        "conventional-changelog-eslint": "^3.0.4",
+        "semantic-release": "^21.0.1"
+    }
+}

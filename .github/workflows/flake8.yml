@@ -1,0 +1,31 @@
+name: Flake8 Linting
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  flake8:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Check out the repository code
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      # Set up Python
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.9.18
+
+      # Install dependencies
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8
+
+      # Run flake8
+      - name: Run flake8
+        run: |
+          flake8 --max-line-length=120 --ignore=E203

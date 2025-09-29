@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools >= 77.0.3"]
+build-backend = "setuptools.build_meta"
+[project]
+name = "build_a_bot_example"
+version = "0.0.0"
+authors = [
+  { name="Ava Gerami", email="ava.gerami@viasat.com" },
+]
+description = "A build_a_bot example"
+readme = "README.md"
+requires-python = ">=3.9.18"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "aiohttp",
+    "build_a_bot",
+    "dotenv",
+    "requests",
+    "slack_bolt"
+
+]
