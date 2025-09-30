@@ -22,9 +22,9 @@ jobs:
           substring="[skip release]"
           if [[ "$commit_message" == *"$substring"* ]]; then
             echo "Skipping release as the commit message contains '$substring'."
-            echo "should_release=false" >> $GITHUB_ENV
+            echo "::set-output name=should_release::false"
           else
-            echo "should_release=true" >> $GITHUB_ENV
+            echo "::set-output name=should_release::true"
           fi
 
 
