@@ -99,6 +99,10 @@ jobs:
           sudo apt update
           sudo apt install -y build-essential
           python -m pip install --upgrade pip build
+      
+      # Clean up old builds
+      - name: Clean dist folder
+        run: rm -rf dist/*
 
       # Build the Python package
       - name: Build package
