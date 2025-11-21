@@ -19,6 +19,14 @@ jobs:
         python-version: '3.9.18'
         architecture: 'x64'
 
+    - name: Restore cached wheels
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/pip/wheels # Or the directory where your wheels are built
+        key: wheels-${{ runner.os }}-${{ hashFiles('**/pyproject.toml', '**/setup.py') }} # Adjust dependency file as needed
+        restore-keys: |
+          wheels-${{ runner.os }}-
+
     # Install runtime dependencies and the package itself
     - name: Install package and dependencies
       run: |
